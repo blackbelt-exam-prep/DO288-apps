@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app.openshift.io/vcs-ref: todo-migrate
+    app.openshift.io/vcs-uri: https://github.com/blackbelt-exam-prep/DO288-apps.git
+    deployment.kubernetes.io/revision: "1"
+    jkube.io/git-branch: todo-migrate
+    jkube.io/git-commit: 5dcc01b9a4babb847a91608666e5277a3cdef92a
+    jkube.io/git-url: https://github.com/blackbelt-exam-prep/DO288-apps.git
+  labels:
+    app: todo-api
+    group: com.redhat.training.openshift.todoapi
+    provider: jkube
+    version: 1.0.0-SNAPSHOT
+  name: todo-api
+  namespace: developer-todo-migrate
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: todo-api
+      group: com.redhat.training.openshift.todoapi
+      provider: jkube
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: todo-api
+        group: com.redhat.training.openshift.todoapi
+        provider: jkube
+        version: 1.0.0-SNAPSHOT
+    spec:
+      containers:
+      - env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        envFrom:
+        - configMapRef:
+            name: todo
+        image: image-registry.openshift-image-registry.svc:5000/developer-todo-migrate/todo-api@sha256:3405e6862e4017588f7de4998e2e7b9e7d51c50a3ea22004f033a7a34fcdcc71
+        imagePullPolicy: IfNotPresent
+        name: quarkus
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9779
+          name: prometheus
+          protocol: TCP
+        - containerPort: 8778
+          name: jolokia
+          protocol: TCP
+        resources: {}
+        securityContext:
+          privileged: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
